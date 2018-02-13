@@ -1,8 +1,43 @@
 <html>
+<head>
+    <link rel="stylesheet" href="css/index.css" />
+</head>
 <body>
-    <div>
-        Hola
+    <div class="content">
+        <div class="lists">
+            <div id="repository" class="droplist">
+                <div class="tag">
+                    Project
+                </div>
+                <div class="title">
+                    Repository
+                </div>
+            </div>
+            <div id="branch" class="droplist">
+                <div class="tag">
+                    Branch
+                </div>
+                <div class="title">
+                    Branch name
+                </div>
+            </div>
+            <div id="settings" class="droplist">
+                <div class="tag">
+                    Settings
+                </div>
+                <div class="title">
+                    Commit & Push
+                </div>
+            </div>
+        </div>
+        <div class="button-container">
+            <div id="button" class="button">
+                Commit
+            </div>
+            <div id="serial-read"></div>
+        </div>
         <script>require('./serial')</script>
+        <script>require('./ui')</script>
     </div>
 </body>
 </html>
