@@ -1,9 +1,27 @@
+<!doctype html>
 <html>
 <head>
+    <title>GitButton</title>
     <link rel="stylesheet" href="css/index.css" />
 </head>
 <body>
+    <div id="titlebar" class="titlebar">
+        <div class="win-buttons">
+            <div class="win-button">
+                <div class="min-icon"></div>
+            </div>
+            <div class="win-button">
+                <div class="max-icon"></div>
+            </div>
+            <div class="win-button close-button">
+                <div class="close-icon"></div>
+            </div>
+        </div>
+    </div>
     <div class="content">
+        <div class="log-container">
+
+        </div>
         <div class="lists">
             <div id="repository" class="droplist">
                 <div class="tag">
@@ -34,10 +52,11 @@
             <div id="button" class="button">
                 Commit
             </div>
-            <div id="serial-read"></div>
+            <!-- <div id="serial-read"></div> -->
         </div>
         <script>require('./serial')</script>
         <script>require('./ui')</script>
+        <script>require('./titlebar')</script>
     </div>
 </body>
 </html>
