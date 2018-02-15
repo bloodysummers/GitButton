@@ -18,13 +18,19 @@ function startCommitWindow() {
         resizable: false,
         frame: false,
         hasShadow: false,
-        show: false
+        show:false
     })
     commitWindow.loadURL(path.join(__dirname, 'renderers/commit/commit.html'))
     
+    commitWindow.once('ready-to-show', () => {
+        commitWindow.show()
+        commitWindow.center()
+        commitWindow.setAlwaysOnTop(true)
+        commitWindow.focus()
+    })
+    
     commitWindow.on('closed', () => {
         if (mainWindow) {
-            startCommitWindow()
             mainWindow.webContents.send('startComm')
         } else {
             commitWindow = null
@@ -34,44 +40,39 @@ function startCommitWindow() {
 
 function showCommit() {
     mainWindow.webContents.send('blockComm')
-    commitWindow.webContents.send('allowActions')
-    commitWindow.show()
-    commitWindow.center()
+    startCommitWindow()
 }
 
 function hideCommit() {
     mainWindow.webContents.send('startComm')
-    commitWindow.webContents.send('blockActions')
-    commitWindow.hide()
+    commitWindow.close()
 }
+
+app.disableHardwareAcceleration()
 
 app.on('ready', () => {
     mainWindow = new BrowserWindow({
         width:750,
         height:500,
         resizable: false,
-        frame: false
+        frame: false,
+        focus: true
     })
     mainWindow.loadURL(path.join(__dirname, 'renderers/index/index.html'))
     mainWindow.on('closed', () => {
         mainWindow = null
         app.quit()
     })
-    
-    startCommitWindow()
-    
+        
     globalShortcut.register('CmdOrCtrl+Shift+Alt+C', () => {
         showCommit()
     })
 })
 
+
+// Communication
 ipc.on('showCommit', () => {
-    if (commitWindow != null) {
-        showCommit()
-    } else {
-        startCommitWindow()
-    }
-    
+    showCommit()
 })
 
 ipc.on('hideCommit', () => {

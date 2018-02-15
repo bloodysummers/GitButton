@@ -120,7 +120,7 @@ body {
 
 /* Button */
 .button-container {
-    background:#17161e;
+    background:rgba(0, 0, 0, 0.7);
     position:absolute;
     right:0;
     top:32px;
