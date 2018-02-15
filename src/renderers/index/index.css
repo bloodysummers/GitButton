@@ -161,13 +161,12 @@ body {
     border:5px solid #fff;
     border-radius:50%;
     opacity:0;
-
 }
-.button:active:after {
+.button.pushed {
+    pointer-events:none;
+}
+.button.pushed:after {
     animation-name:commit;
     animation-duration:0.8s;
-}
-.button:hover {
-    box-shadow:inset 0 -3px 5px rgba(0, 0, 0, 0.2);
 }
 /* /Button */
