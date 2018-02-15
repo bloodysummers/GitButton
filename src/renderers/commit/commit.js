@@ -3,7 +3,7 @@ const electron = require('electron')
 
 const { ipcRenderer: ipc } = electron
 
-const button = document.getElementById('commit-message')
+const input = document.getElementById('commit-message')
 let allowActions = false
 
 function getKey(e) {
@@ -20,13 +20,18 @@ document.onkeydown = function(e) {
         e = e || window.event
         let key = getKey(e)
         if (key == "Escape") {
-            button.value = ""
             ipc.send('hideCommit')
+            input.value = ""
         } else if (key == "Enter") {
-            const commit = button.value
+            const commit = input.value
             if (commit != "") {
-                ipc.send('doCommit')
+                ipc.send('doCommit', commit)
+                input.value = ""
             } else {
+                input.classList.add("error")
+                setTimeout(() => {
+                    input.classList.remove("error")
+                }, 1000)
             }
         }
     }

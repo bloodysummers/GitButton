@@ -39,6 +39,12 @@ function showCommit() {
     commitWindow.center()
 }
 
+function hideCommit() {
+    mainWindow.webContents.send('startComm')
+    commitWindow.webContents.send('blockActions')
+    commitWindow.hide()
+}
+
 app.on('ready', () => {
     mainWindow = new BrowserWindow({
         width:750,
@@ -69,9 +75,12 @@ ipc.on('showCommit', () => {
 })
 
 ipc.on('hideCommit', () => {
-    mainWindow.webContents.send('startComm')
-    commitWindow.webContents.send('blockActions')
-    commitWindow.hide()
+    hideCommit()
+})
+
+ipc.on('doCommit', (e, message) => {
+    console.log(message)
+    hideCommit()
 })
 
 ipc.on('minimize', () => {
