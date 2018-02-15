@@ -2,18 +2,18 @@
 <html>
 <head>
     <title>GitButton</title>
-    <link rel="stylesheet" href="css/index.css" />
+    <link rel="stylesheet" href="index.css" />
 </head>
 <body>
     <div id="titlebar" class="titlebar">
         <div class="win-buttons">
-            <div class="win-button">
+            <div class="win-button" id="min-button">
                 <div class="min-icon"></div>
             </div>
-            <div class="win-button">
+            <div class="win-button" id="max-button">
                 <div class="max-icon"></div>
             </div>
-            <div class="win-button close-button">
+            <div class="win-button close-button" id="close-button">
                 <div class="close-icon"></div>
             </div>
         </div>
@@ -55,7 +55,7 @@
             <!-- <div id="serial-read"></div> -->
         </div>
         <script>require('./serial')</script>
-        <script>require('./ui')</script>
+        <script>require('./comm')</script>
         <script>require('./titlebar')</script>
     </div>
 </body>
