@@ -5,18 +5,22 @@ const { ipcRenderer: ipc } = electron
 const { Readline } = SerialPort.parsers
 
 SerialPort.list((err, ports) => {
-    console.log(ports)
+    // console.log(ports)
 })
 
 let commitAvailable = true
 
-// UI Button
-const button = document.getElementById('button')
-button.addEventListener('click', () => {
+function showCommitWindow() {
     if (commitAvailable) {
         button.classList.add('pushed')
         ipc.send('showCommit')
     }
+}
+
+// UI Button
+const button = document.getElementById('button')
+button.addEventListener('click', () => {
+    showCommitWindow()
 })
 
 // Serial Button
@@ -25,15 +29,14 @@ const port = new SerialPort('COM3', {
 })
 const parser = port.pipe(new Readline({ delimiter: '\r\n' }))
 parser.on('data', (data) => {
-    if (commitAvailable && data == "Commit!") {
-        button.classList.add('pushed')
-        ipc.send('showCommit')
+    if (data == "Commit!") {
+        showCommitWindow()
     }
 })
 port.on('open', () => {
 })
 port.on('error', function(error){
-    console.log(error)
+    // console.log(error)
 })
 
 // Communication
@@ -44,4 +47,7 @@ ipc.on('blockComm', () => {
 ipc.on('startComm', () => {
     commitAvailable = true
     button.classList.remove('pushed')
+})
+ipc.on('showCommit', () => {
+    showCommitWindow()
 })
