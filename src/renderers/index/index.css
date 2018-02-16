@@ -261,19 +261,19 @@ body {
 .searcher .search-button:hover {
     background:rgba(255,53,127,1);
 }
-.repo-list {
+.repo-list, .branch-list {
     height:285px;
     overflow:auto;
 }
-.repo-list .repo-item {
+.repo-list .repo-item, .branch-list .branch-item {
     padding:10px 10px 15px 10px;
     border-bottom:1px solid #ddd;
     cursor:pointer;
 }
-.repo-list .repo-item:hover {
+.repo-list .repo-item:hover, .branch-list .branch-item:hover {
     background:#f0f0f0;
 }
-.repo-list .repo-item.active {
+.repo-list .repo-item.active, .branch-list .branch-item.active {
     background:#ddd;
 }
 .repo-list .repo-item .delete-project {
@@ -293,7 +293,7 @@ body {
     color:#fff;
     background:rgba(255,53,127,1);
 }
-.repo-list .repo-item h4 {
+.repo-list .repo-item h4, .branch-list .branch-item h4 {
     font-size:14px;
     margin:0;
     font-weight:500;

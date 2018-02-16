@@ -12,6 +12,7 @@ const addRepoButton = $('#add-repo-button')
 const repoList = $('#repo-list')
 const repositoryButton = $('#repository')
 const branchButton = $('#branch')
+const branchList = $('#branch-list')
 
 let directory
 let project
@@ -70,7 +71,7 @@ function getCurrentBranch(dir) {
             let branch
             for (let i = 0; i<branches.length; i++) {
                 if (branches[i].charAt(0) == '*') {
-                    branch = branches[i].substr(2, branches[i].length-1)
+                    branch = branches[i].substr(2, branches[i].length-1).trim()
                     branchButton.find('.title').text(branch)
                     return branch
                 }
@@ -79,6 +80,28 @@ function getCurrentBranch(dir) {
             branches = undefined
             branchButton.find('.title').text('No branch selected')
         }
+    })
+}
+
+function getBranches(dir, showAll, callback) {
+    let all = showAll ? ' -a' : ''
+    exec(`git branch${all}`, {
+        cwd: dir
+    }, (err, stdout, stderr) => {
+        let branches = stdout.split('\n')
+        let clrBranches = []
+        if (branches.length > 1) {
+            for (let i = 0; i<branches.length; i++) {
+                if (branches[i].charAt(0) == '*') {
+                    branch = branches[i].substr(2, branches[i].length-1).trim()
+                    clrBranches.push({branch, active: true})
+                } else {
+                    if (branches[i].length > 0)
+                        clrBranches.push({branch: branches[i].trim(), active: false})
+                }
+            }
+        }
+        callback(clrBranches)
     })
 }
 
@@ -104,6 +127,21 @@ function listRepositories() {
         repositoryButton.find('.title').text(project)
     else
         repositoryButton.find('.title').text('No project selected')
+}
+
+function listBranches() {
+    branchList.html('')
+    getBranches(directory, undefined, (branches) => {
+        console.log(branches)
+        for (let i = 0; i<branches.length; i++) {
+            let active = branches[i].active
+            branchList.append(`
+                <div class="branch-item${active ? ' active' : ''}">
+                    <h4 class="branch-name">${branches[i].branch}</h4>
+                </div>`
+            )
+        }
+    })
 }
 
 inputFile.on('change', () => {
@@ -155,3 +193,5 @@ branchWindow.find('.close-icon').on('click', () => {
 })
 
 listRepositories()
+
+listBranches()
