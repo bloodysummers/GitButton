@@ -122,6 +122,7 @@ function listRepositories() {
     }
     directory = getCurrentDirectory(selected)
     project = getCurrentDirectory(selected, true)
+    listBranches()
     branch = getCurrentBranch(directory)
     if (project)
         repositoryButton.find('.title').text(project)
