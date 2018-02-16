@@ -132,15 +132,23 @@ function listRepositories() {
 function listBranches() {
     branchList.html('')
     getBranches(directory, undefined, (branches) => {
-        console.log(branches)
         for (let i = 0; i<branches.length; i++) {
             let active = branches[i].active
             branchList.append(`
-                <div class="branch-item${active ? ' active' : ''}">
+                <div class="branch-item${active ? ' active' : ''}" data-branch=${branches[i].branch}>
                     <h4 class="branch-name">${branches[i].branch}</h4>
                 </div>`
             )
         }
+    })
+}
+
+function checkoutBranch(branch, dir, callback) {
+    exec(`git checkout ${branch}`, {
+        cwd: dir
+    }, (err, stdout, stderr) => {
+        console.log(err, stdout, stderr)
+        callback()
     })
 }
 
@@ -173,6 +181,15 @@ repositoryButton.on('click', (e) => {
         repoWindow.fadeIn(300)
         showRepoSettings = true
     }
+})
+branchList.on('click', '.branch-item', function() {
+    let branch = $(this).data('branch')
+    checkoutBranch(branch, directory, () => {
+        listBranches()
+        getCurrentBranch(directory)
+        branchWindow.fadeOut(300)
+        showBranchSettings = false
+    })
 })
 branchButton.on('click', (e) => {
     if (showBranchSettings) {
