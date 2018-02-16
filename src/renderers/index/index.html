@@ -29,7 +29,6 @@
                     Project
                 </div>
                 <div class="title">
-                    Repository
                 </div>
             </div>
             <div id="branch" class="droplist">
@@ -37,7 +36,6 @@
                     Branch
                 </div>
                 <div class="title">
-                    Branch name
                 </div>
             </div>
             <div id="settings" class="droplist">
@@ -55,19 +53,21 @@
             </div>
         </div>
         <div class="repo-container">
-            <div class="card">
-                <div class="card-head">
-                    <div class="close-icon">
-                        <i class="fa fa-times"></i>
+            <div class="repo-wrap">
+                <div class="card">
+                    <div class="card-head">
+                        <div class="close-icon">
+                            <i class="fa fa-times"></i>
+                        </div>
+                        <h2>Projects</h2>
+                        <div class="searcher">
+                            <input type="file" webkitdirectory id="search-repo" class="hidden-input">
+                            <button class="search-button" id="search-repo-button">Add</button>
+                            <span id="repo-error" class="error-message"></span>
+                        </div>
                     </div>
-                    <h2>Projects</h2>
-                    <div class="searcher">
-                        <input type="file" webkitdirectory id="search-repo" class="hidden-input">
-                        <button class="search-button" id="search-repo-button">Add</button>
-                        <span id="repo-error" class="error-message"></span>
-                    </div>
+                    <div class="repo-list" id="repo-list"></div>
                 </div>
-                <div class="repo-list" id="repo-list"></div>
             </div>
         </div>
         <script>window.$ = window.jQuery = require('jquery')</script>
