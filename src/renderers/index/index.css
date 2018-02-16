@@ -1,5 +1,6 @@
 * {
     box-sizing:border-box;
+    user-select: none;
 }
 body, html {
     margin:0;
@@ -19,37 +20,20 @@ body {
 }
 .card .close-icon {
     float:right;
-    width:20px;
-    height:20px;
-    position:relative;
+    font-size:20px;
+    color:#bbb;
     cursor:pointer;
-}
-.card .close-icon:before {
-    content:'';
-    display:block;
-    width:25px;
-    height:3px;
-    background:#bbb;
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%) rotate(45deg);
-}
-.card .close-icon:after {
-    content:'';
-    display:block;
-    width:25px;
-    height:3px;
-    background:#bbb;
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%) rotate(-45deg);
 }
 .card h2 {
     color:#242424;
     margin-top:0;
     margin-bottom:10px;
+    float:left;
+}
+.card-head:after {
+    content:'';
+    display:block;
+    clear:both;
 }
 .titlebar {
     -webkit-app-region:drag;
@@ -246,16 +230,11 @@ body {
     padding:20px;
 }
 .searcher {
-    display:flex;
+    float:left;
 }
-.searcher .input {
-    flex:1;
-    font-family:'Segoe UI', sans-serif;
-    outline:0;
-    border:1px solid #ddd;
-    border-radius:10px 0 0 10px;
-    font-size:16px;
-    padding:5px 12px;
+.searcher .error-message {
+    color:#F00;
+    font-size:11px;
 }
 .searcher .hidden-input {
     display:none;
@@ -263,8 +242,10 @@ body {
 .searcher .search-button {
     background:rgba(152,68,183,1);
     border:0;
-    border-radius:0 10px 10px 0;
-    padding:5px 20px;
+    border-radius:10px;
+    padding:3px 15px;
+    margin-top:3px;
+    margin-left:15px;
     color:#fff;
     font-family:'Segoe UI', sans-serif;
     font-size:16px;

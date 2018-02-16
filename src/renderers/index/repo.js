@@ -3,7 +3,7 @@ const exec = require('child_process').exec
 const os = require('os')
 const { addRepository, getRepositories } = require('./store')
 
-const inputText = $('#repo-location')
+const errorMessage = $('#repo-error')
 const inputFile = $('#search-repo')
 const inputFileButton = $('#search-repo-button')
 const addRepoButton = $('#add-repo-button')
@@ -30,8 +30,11 @@ function checkGitStatus(dir) {
         else if (/nothing to commit/.test(stdout)) status = 'clean'
         else status = 'dirty'
         if (status != 'unknown') {
+            errorMessage.text('')
             addRepository(dir)
             listRepositories()
+        } else {
+            errorMessage.text('Not a git repository')
         }
     })
 }
@@ -43,10 +46,11 @@ function formatDir(dir) {
 }
 
 inputFile.on('change', () => {
-    const dir = formatDir(inputFile[0].files[0].path)
-    if (isDir(dir))
-        inputText.val(dir)
-        checkGitStatus(dir)
+    if (inputFile[0].files[0]) {
+        const dir = formatDir(inputFile[0].files[0].path)
+        if (isDir(dir))
+            checkGitStatus(dir)
+    }
 })
 
 function listRepositories() {

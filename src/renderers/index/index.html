@@ -3,6 +3,7 @@
 <head>
     <title>GitButton</title>
     <link rel="stylesheet" href="index.css" />
+    <link href="static/css/font-awesome.min.css" rel="stylesheet" type="text/css">
 </head>
 <body>
     <div id="titlebar" class="titlebar">
@@ -55,12 +56,16 @@
         </div>
         <div class="repo-container">
             <div class="card">
-                <div class="close-icon"></div>
-                <h2>Projects</h2>
-                <div class="searcher">
-                    <input type="text" id="repo-location" class="input" />
-                    <input type="file" webkitdirectory id="search-repo" class="hidden-input">
-                    <button class="search-button" id="search-repo-button">Search</button>
+                <div class="card-head">
+                    <div class="close-icon">
+                        <i class="fa fa-times"></i>
+                    </div>
+                    <h2>Projects</h2>
+                    <div class="searcher">
+                        <input type="file" webkitdirectory id="search-repo" class="hidden-input">
+                        <button class="search-button" id="search-repo-button">Add</button>
+                        <span id="repo-error" class="error-message"></span>
+                    </div>
                 </div>
                 <div class="repo-list" id="repo-list"></div>
             </div>
