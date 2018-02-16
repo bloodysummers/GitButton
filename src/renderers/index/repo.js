@@ -4,6 +4,7 @@ const os = require('os')
 const { addRepository, getRepositories, setSelectedProject, getSelectedProject, hashExists, getCurrentDirectory, deleteRepository } = require('./store')
 
 const repoWindow = $('.repo-container')
+const branchWindow = $('.branch-container')
 const errorMessage = $('#repo-error')
 const inputFile = $('#search-repo')
 const inputFileButton = $('#search-repo-button')
@@ -16,6 +17,7 @@ let directory
 let project
 let branch
 let showRepoSettings = false
+let showBranchSettings = false
 
 inputFileButton.on('click', () => {
     inputFile.click()
@@ -116,6 +118,8 @@ repoList.on('click', '.repo-item', function() {
     let hash = $(this).data('hash')
     setSelectedProject(hash)
     listRepositories()
+    repoWindow.fadeOut(300)
+    showRepoSettings = false
 })
 repoList.on('click', '.delete-project', function(e) {
     e.stopPropagation()
@@ -124,7 +128,6 @@ repoList.on('click', '.delete-project', function(e) {
     listRepositories()
 })
 repositoryButton.on('click', (e) => {
-    console.log(e)
     if (showRepoSettings) {
         repoWindow.fadeOut(300)
         showRepoSettings = false
@@ -133,9 +136,22 @@ repositoryButton.on('click', (e) => {
         showRepoSettings = true
     }
 })
+branchButton.on('click', (e) => {
+    if (showBranchSettings) {
+        branchWindow.fadeOut(300)
+        showBranchSettings = false
+    } else {
+        branchWindow.fadeIn(300)
+        showBranchSettings = true
+    }
+})
 repoWindow.find('.close-icon').on('click', () => {
     repoWindow.fadeOut(300)
     showRepoSettings = false
+})
+branchWindow.find('.close-icon').on('click', () => {
+    branchWindow.fadeOut(300)
+    showBranchSettings = false
 })
 
 listRepositories()
