@@ -80,7 +80,7 @@ ipc.on('hideCommit', () => {
 })
 
 ipc.on('doCommit', (e, message) => {
-    console.log(message)
+    mainWindow.webContents.send('getCommitMessage', message)
     hideCommit()
 })
 

@@ -1,3 +1,7 @@
+const electron = require('electron')
+
+const { ipcRenderer: ipc } = electron
+
 const fs = require('fs')
 const exec = require('child_process').exec
 const os = require('os')
@@ -23,11 +27,13 @@ let project
 let branch
 let showRepoSettings = false
 let showBranchSettings = false
+let branchStatus
 
 inputFileButton.on('click', () => {
     inputFile.click()
 })
 
+// Functions
 function isDir(dir) {
     try {
         return fs.lstatSync(dir).isDirectory()
@@ -42,7 +48,7 @@ function formatDir(dir) {
         : dir.trim()
 }
 
-function checkGitStatus(dir) {
+function checkGitStatus(dir, callback) {
     let status
     exec("git status", {
         cwd: dir
@@ -50,19 +56,8 @@ function checkGitStatus(dir) {
         if (err) status = 'unknown'
         else if (/nothing to commit/.test(stdout)) status = 'clean'
         else status = 'dirty'
-        if (status != 'unknown') {
-            exec(`echo "${dir}" | git hash-object --stdin`, (err, hash) => {
-                if (!hashExists(hash.trim())) {
-                    repoError.text('')
-                    addRepository(dir, hash.trim())
-                    listRepositories()
-                } else {
-                    repoError.text('Already stored')
-                }
-            })
-        } else {
-            repoError.text('Not a git repository')
-        }
+        if (callback)
+            callback(status)
     })
 }
 
@@ -110,7 +105,8 @@ function getBranches(dir, showAll, callback) {
             var branchB = b.branch.toUpperCase();
             return (branchA < branchB) ? -1 : (branchA > branchB) ? 1 : 0;
         });
-        callback(clrBranches)
+        if (callback)
+            callback(clrBranches)
     })
 }
 
@@ -133,6 +129,9 @@ function listRepositories() {
     project = getCurrentDirectory(selected, true)
     listBranches()
     branch = getCurrentBranch(directory)
+    checkGitStatus(directory, (status) => {
+        branchStatus = status;
+    })
     if (project)
         repositoryButton.find('.title').text(project)
     else
@@ -161,7 +160,8 @@ function checkoutBranch(branch, dir, callback) {
         if (/Please commit your changes or stash them before you switch branches/.test(stderr))
             branchError.text('Changes not commited or stashed')
         else
-            callback()
+            if (callback)
+                callback()
     })
 }
 
@@ -177,21 +177,67 @@ function createBranch(branch, dir, callback) {
                 newBranchModal.find('.error-message').text('Invalid branch name')
             else {
                 newBranchModal.find('.error-message').text('')
-                callback()
+                if (callback)
+                    callback()
             }
         })
     } else
         newBranchModal.find('.error-message').text('Invalid branch name')
 }
 
+function addToIndex(dir, callback) {
+    exec('git add .', {
+        cwd: dir
+    }, (err, stdout, stderr) => {
+        console.log(err, stdout, stderr)
+        if (callback)
+            callback()
+    })
+}
+
+function commitChanges(dir, message, callback) {
+    exec(`git commit -m "${message}"`, {
+        cwd: dir
+    }, (err, stdout, stderr) => {
+        console.log(err, stdout, stderr)
+        if (callback)
+            callback([err, stdout, stderr])
+    })
+}
+
+function pushCommits(dir, callback) {
+    exec('git push origin', {
+        cwd: dir
+    }, (err, stdout, stderr) => {
+        console.log(err, stdout, stderr)
+        if (callback)
+            callback()
+    })
+}
+
+
+// Events
 inputFile.on('change', () => {
     if (inputFile[0].files[0]) {
         const dir = formatDir(inputFile[0].files[0].path)
         if (isDir(dir))
-            checkGitStatus(dir)
+            checkGitStatus(dir, (status) => {
+                if (status != 'unknown') {
+                    exec(`echo "${dir}" | git hash-object --stdin`, (err, hash) => {
+                        if (!hashExists(hash.trim())) {
+                            repoError.text('')
+                            addRepository(dir, hash.trim())
+                            listRepositories()
+                        } else {
+                            repoError.text('Already stored')
+                        }
+                    })
+                } else {
+                    repoError.text('Not a git repository')
+                }
+            })
     }
 })
-
 repoList.on('click', '.repo-item', function() {
     let hash = $(this).data('hash')
     setSelectedProject(hash)
@@ -264,4 +310,25 @@ branchWindow.find('.close-icon').on('click', () => {
     showBranchSettings = false
 })
 
+// Communication
+ipc.on('getCommitMessage', (e, message) => {
+    checkGitStatus(directory, (status) => {
+        branchStatus = status;
+        if (branchStatus == 'dirty') {
+            console.log('dirty branch')
+            addToIndex(directory, () => {
+                commitChanges(directory, message, (result) => {
+                    console.log(result)
+                    pushCommits(directory)
+                })
+            })
+        } else {
+            console.log('The branch is clean')
+        }
+    })
+})
+
 listRepositories()
+checkGitStatus(directory, (status) => {
+    branchStatus = status
+})
