@@ -21,14 +21,14 @@ function startCommitWindow() {
         show:false
     })
     commitWindow.loadURL(path.join(__dirname, 'renderers/commit/commit.html'))
-    
+
     commitWindow.once('ready-to-show', () => {
         commitWindow.show()
         commitWindow.center()
         commitWindow.setAlwaysOnTop(true)
         commitWindow.focus()
     })
-    
+
     commitWindow.on('closed', () => {
         if (mainWindow) {
             mainWindow.webContents.send('startComm')
@@ -63,9 +63,9 @@ app.on('ready', () => {
         mainWindow = null
         app.quit()
     })
-        
+
     globalShortcut.register('CmdOrCtrl+Shift+Alt+C', () => {
-        showCommit()
+        mainWindow.webContents.send('showCommit')
     })
 })
 
