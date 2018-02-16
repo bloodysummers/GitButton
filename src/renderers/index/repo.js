@@ -14,6 +14,9 @@ const repositoryButton = $('#repository')
 const branchButton = $('#branch')
 const branchList = $('#branch-list')
 const branchError = $('#branch-error')
+const newBranchButton = $('#new-branch-button')
+const blackLayer = $('.black-layer')
+const newBranchModal = $('.new-branch-modal')
 
 let directory
 let project
@@ -213,6 +216,16 @@ branchButton.on('click', (e) => {
         repoWindow.fadeOut(300)
         showRepoSettings = false
     }
+})
+newBranchButton.on('click', () => {
+    $('.new-branch-modal').show()
+    $('.black-layer').fadeIn(300)
+})
+blackLayer.on('click', () => {
+    blackLayer.fadeOut(300).find('modal').fadeOut(300)
+})
+newBranchModal.on('click', (e) => {
+    e.stopPropagation()
 })
 repoWindow.find('.close-icon').on('click', () => {
     repoWindow.fadeOut(300)

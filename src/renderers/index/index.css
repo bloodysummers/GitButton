@@ -258,7 +258,7 @@ body {
     outline:0;
     transition:0.3s all;
 }
-.searcher .search-button:hover {
+.searcher .search-button:hover, .creator .new-branch-button:hover {
     background:rgba(255,53,127,1);
 }
 .repo-list, .branch-list {
@@ -313,6 +313,7 @@ body {
     border-radius:5px;
     padding:15px;
     display:flex;
+    cursor:default;
 }
 .new-branch-modal input {
     border:1px solid #ddd;
@@ -350,4 +351,8 @@ body {
     background:rgba(0, 0, 0, 0.5);
     z-index:3;
     cursor:pointer;
+    display:none;
+}
+.modal {
+    display:none;
 }
