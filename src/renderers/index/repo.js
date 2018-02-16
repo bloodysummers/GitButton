@@ -211,5 +211,3 @@ branchWindow.find('.close-icon').on('click', () => {
 })
 
 listRepositories()
-
-listBranches()
