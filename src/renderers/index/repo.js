@@ -10,9 +10,11 @@ const inputFileButton = $('#search-repo-button')
 const addRepoButton = $('#add-repo-button')
 const repoList = $('#repo-list')
 const repositoryButton = $('#repository')
+const branchButton = $('#branch')
 
 let directory
 let project
+let branch
 let showRepoSettings = false
 
 inputFileButton.on('click', () => {
@@ -25,6 +27,12 @@ function isDir(dir) {
     } catch(e) {
         return false
     }
+}
+
+function formatDir(dir) {
+    return /^~/.test(dir)
+        ? os.homedir() + dir.substr(1).trim()
+        : dir.trim()
 }
 
 function checkGitStatus(dir) {
@@ -51,10 +59,49 @@ function checkGitStatus(dir) {
     })
 }
 
-function formatDir(dir) {
-    return /^~/.test(dir)
-        ? os.homedir() + dir.substr(1).trim()
-        : dir.trim()
+function getCurrentBranch(dir) {
+    exec("git branch", {
+        cwd: dir
+    }, (err, stdout, stderr) => {
+        let branches = stdout.split('\n')
+        if (branches.length > 1) {
+            let branch
+            for (let i = 0; i<branches.length; i++) {
+                if (branches[i].charAt(0) == '*') {
+                    branch = branches[i].substr(2, branches[i].length-1)
+                    branchButton.find('.title').text(branch)
+                    return branch
+                }
+            }
+        } else {
+            branches = undefined
+            branchButton.find('.title').text('No branch selected')
+        }
+    })
+}
+
+function listRepositories() {
+    const repos = getRepositories()
+    let selected = getSelectedProject()
+    repoList.html('')
+    for (let i = 0; i < repos.length; i++) {
+        let hash = repos[i].hash
+        let active = hash == selected
+        repoList.append(`
+            <div class="repo-item${active ? ' active' : ''}" data-hash=${repos[i].hash}>
+                <div class="delete-project"><i class="fa fa-trash"></i></div>
+                <h4 class="repo-name">${repos[i].name}</h4>
+                <p className="repo-location">${repos[i].location}</p>
+            </div>`
+        )
+    }
+    directory = getCurrentDirectory(selected)
+    project = getCurrentDirectory(selected, true)
+    branch = getCurrentBranch(directory)
+    if (project)
+        repositoryButton.find('.title').text(project)
+    else
+        repositoryButton.find('.title').text('No project selected')
 }
 
 inputFile.on('change', () => {
@@ -90,28 +137,5 @@ repoWindow.find('.close-icon').on('click', () => {
     repoWindow.fadeOut(300)
     showRepoSettings = false
 })
-
-function listRepositories() {
-    const repos = getRepositories()
-    let selected = getSelectedProject()
-    repoList.html('')
-    for (let i = 0; i < repos.length; i++) {
-        let hash = repos[i].hash
-        let active = hash == selected
-        repoList.append(`
-            <div class="repo-item${active ? ' active' : ''}" data-hash=${repos[i].hash}>
-                <div class="delete-project"><i class="fa fa-trash"></i></div>
-                <h4 class="repo-name">${repos[i].name}</h4>
-                <p className="repo-location">${repos[i].location}</p>
-            </div>`
-        )
-    }
-    directory = getCurrentDirectory(selected)
-    project = getCurrentDirectory(selected, true)
-    if (project)
-        repositoryButton.find('.title').text(project)
-    else
-        repositoryButton.find('.title').text('No project selected')
-}
 
 listRepositories()
