@@ -50,11 +50,26 @@
         </div>
         <div class="button-container">
             <div id="button" class="button">
-                Commit
+                <!-- Commit -->
             </div>
         </div>
+        <div class="repo-container">
+            <div class="card">
+                <div class="close-icon"></div>
+                <h2>Projects</h2>
+                <div class="searcher">
+                    <input type="text" id="repo-location" class="input" />
+                    <input type="file" webkitdirectory id="search-repo" class="hidden-input">
+                    <button class="search-button" id="search-repo-button">Search</button>
+                </div>
+                <div class="repo-list" id="repo-list"></div>
+            </div>
+        </div>
+        <script>window.$ = window.jQuery = require('jquery')</script>
         <script>require('./comm')</script>
         <script>require('./titlebar')</script>
+        <script>require('./repo')</script>
+        <script>require('./store')</script>
     </div>
 </body>
 </html>
