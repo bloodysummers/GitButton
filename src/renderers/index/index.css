@@ -35,6 +35,11 @@ body {
     display:block;
     clear:both;
 }
+.error-message {
+    color:#F00;
+    font-family:'Segoe UI', sans-serif;
+    font-size:11px;
+}
 .titlebar {
     -webkit-app-region:drag;
     position:absolute;
@@ -236,10 +241,6 @@ body {
 }
 .searcher, .creator {
     float:left;
-}
-.searcher .error-message, .creator .error-message {
-    color:#F00;
-    font-size:11px;
 }
 .searcher .hidden-input {
     display:none;

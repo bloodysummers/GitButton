@@ -165,6 +165,25 @@ function checkoutBranch(branch, dir, callback) {
     })
 }
 
+function createBranch(branch, dir, callback) {
+    if (/^[a-zA-Z0-9_-]*$/g.test(branch)) {
+        exec(`git checkout -b ${branch}`, {
+            cwd: dir
+        }, (err, stdout, stderr) => {
+            console.log(err, stdout, stderr)
+            if (/already exists/.test(stderr))
+                newBranchModal.find('.error-message').text('The branch already exists')
+            else if (/is not recognized as an internal or external command/.test(stderr) || /is not a valid branch name/.test(stderr))
+                newBranchModal.find('.error-message').text('Invalid branch name')
+            else {
+                newBranchModal.find('.error-message').text('')
+                callback()
+            }
+        })
+    } else
+        newBranchModal.find('.error-message').text('Invalid branch name')
+}
+
 inputFile.on('change', () => {
     if (inputFile[0].files[0]) {
         const dir = formatDir(inputFile[0].files[0].path)
@@ -223,9 +242,18 @@ newBranchButton.on('click', () => {
 })
 blackLayer.on('click', () => {
     blackLayer.fadeOut(300).find('modal').fadeOut(300)
+    newBranchModal.find('.error-message').text('')
 })
 newBranchModal.on('click', (e) => {
     e.stopPropagation()
+})
+newBranchModal.on('click', '#create-branch-button', () => {
+    const branchName = newBranchModal.find('#new-branch-input').val()
+    if (branchName != "")
+        createBranch(branchName, directory, () => {
+            listBranches()
+            blackLayer.click()
+        })
 })
 repoWindow.find('.close-icon').on('click', () => {
     repoWindow.fadeOut(300)

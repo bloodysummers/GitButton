@@ -89,8 +89,11 @@
         </div>
         <div class="black-layer">
             <div class="new-branch-modal modal">
-                <input type="text" id="new-branch-input" />
-                <button id="create-branch-button">Create branch</button>
+                <div class="new-branch-container">
+                    <input type="text" id="new-branch-input" />
+                    <button id="create-branch-button">Create branch</button>
+                </div>
+                <span class="error-message"></span>
             </div>
         </div>
         <script>window.$ = window.jQuery = require('jquery')</script>
