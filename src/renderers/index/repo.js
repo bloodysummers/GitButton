@@ -5,7 +5,7 @@ const { addRepository, getRepositories, setSelectedProject, getSelectedProject, 
 
 const repoWindow = $('.repo-container')
 const branchWindow = $('.branch-container')
-const errorMessage = $('#repo-error')
+const repoError = $('#repo-error')
 const inputFile = $('#search-repo')
 const inputFileButton = $('#search-repo-button')
 const addRepoButton = $('#add-repo-button')
@@ -13,6 +13,7 @@ const repoList = $('#repo-list')
 const repositoryButton = $('#repository')
 const branchButton = $('#branch')
 const branchList = $('#branch-list')
+const branchError = $('#branch-error')
 
 let directory
 let project
@@ -49,15 +50,15 @@ function checkGitStatus(dir) {
         if (status != 'unknown') {
             exec(`echo "${dir}" | git hash-object --stdin`, (err, hash) => {
                 if (!hashExists(hash.trim())) {
-                    errorMessage.text('')
+                    repoError.text('')
                     addRepository(dir, hash.trim())
                     listRepositories()
                 } else {
-                    errorMessage.text('Already stored')
+                    repoError.text('Already stored')
                 }
             })
         } else {
-            errorMessage.text('Not a git repository')
+            repoError.text('Not a git repository')
         }
     })
 }
@@ -101,6 +102,11 @@ function getBranches(dir, showAll, callback) {
                 }
             }
         }
+        clrBranches.sort(function(a, b) {
+            var branchA = a.branch.toUpperCase();
+            var branchB = b.branch.toUpperCase();
+            return (branchA < branchB) ? -1 : (branchA > branchB) ? 1 : 0;
+        });
         callback(clrBranches)
     })
 }
@@ -135,6 +141,7 @@ function listBranches() {
     getBranches(directory, undefined, (branches) => {
         for (let i = 0; i<branches.length; i++) {
             let active = branches[i].active
+            branchError.text('')
             branchList.append(`
                 <div class="branch-item${active ? ' active' : ''}" data-branch=${branches[i].branch}>
                     <h4 class="branch-name">${branches[i].branch}</h4>
@@ -148,8 +155,10 @@ function checkoutBranch(branch, dir, callback) {
     exec(`git checkout ${branch}`, {
         cwd: dir
     }, (err, stdout, stderr) => {
-        console.log(err, stdout, stderr)
-        callback()
+        if (/Please commit your changes or stash them before you switch branches/.test(stderr))
+            branchError.text('Changes not commited or stashed')
+        else
+            callback()
     })
 }
 
@@ -181,6 +190,8 @@ repositoryButton.on('click', (e) => {
     } else {
         repoWindow.fadeIn(300)
         showRepoSettings = true
+        branchWindow.fadeOut(300)
+        showBranchSettings = false
     }
 })
 branchList.on('click', '.branch-item', function() {
@@ -199,6 +210,8 @@ branchButton.on('click', (e) => {
     } else {
         branchWindow.fadeIn(300)
         showBranchSettings = true
+        repoWindow.fadeOut(300)
+        showRepoSettings = false
     }
 })
 repoWindow.find('.close-icon').on('click', () => {
