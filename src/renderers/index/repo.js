@@ -6,7 +6,7 @@ const fs = require('fs')
 const exec = require('child_process').exec
 const os = require('os')
 const { addRepository, getRepositories, setSelectedProject, getSelectedProject, hashExists, getCurrentDirectory, deleteRepository } = require('./store')
-const { checkGitStatus, hashDirectory, getBranches, checkoutBranch, createBranch, addToIndex, commitChanges, pushCommits } = require('./git')
+const { checkGitStatus, hashDirectory, getBranches, checkoutBranch, createBranch, addToIndex, commitChanges, pushCommits, fetchOrigin, checkRemote, mergeRemote } = require('./git')
 
 const repoWindow = $('.repo-container')
 const branchWindow = $('.branch-container')
@@ -268,18 +268,38 @@ blackLayer.on('click', () => {
 //
 
 ipc.on('getCommitMessage', (e, message) => {
-    checkGitStatus(directory, (status) => {
-        branchStatus = status;
-        if (branchStatus == 'dirty') {
-            addToIndex(directory, () => {
-                commitChanges(directory, message, (result) => {
-                    console.log(result)
-                    pushCommits(directory)
-                })
+    // Pull all the remote changes
+    fetchOrigin(branch, directory, msg => {
+        console.log(msg)
+        // Merge changes from remote
+        mergeRemote(branch, directory, (msg) => {
+            console.log(msg)
+            // If merge has no conflicts...
+            // Check if you have changes to upload
+            checkGitStatus(directory, (status) => {
+                branchStatus = status;
+                if (branchStatus == 'dirty') {
+                    // Check if local is ancestor
+                    //if ancestor, fast-forward
+                    // else merge
+                    // If no conflict, continue
+                    // Add all files to index
+                    addToIndex(directory, () => {
+                        commitChanges(directory, message, (result) => {
+                            console.log(result)
+                            checkRemote(branch, directory, (msg, remote) => {
+                                console.log(msg, remote)
+                                pushCommits(remote ? branch : '', directory, (msg) => {
+                                    console.log(msg)
+                                })
+                            })
+                        })
+                    })
+                } else {
+                    console.log('The branch is clean')
+                }
             })
-        } else {
-            console.log('The branch is clean')
-        }
+        })
     })
 })
 

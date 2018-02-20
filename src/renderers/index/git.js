@@ -84,11 +84,41 @@ exports.commitChanges = (dir, message, callback) => {
     })
 }
 
-exports.pushCommits = (dir, callback) => {
-    exec('git push origin', {
+exports.pushCommits = (branch, dir, callback) => {
+    exec(`git push${branch ? ' -u' : ''} origin${branch ? ` ${branch}` : ''}`, {
         cwd: dir
     }, (err, stdout, stderr) => {
         if (callback)
-            callback()
+            callback({err, stdout, stderr})
+    })
+}
+
+exports.fetchOrigin = (branch, dir, callback) => {
+    exec(`git fetch ${branch}`, {
+        cwd: dir
+    }, (err, stdout, stderr) => {
+        if (callback)
+            callback({err, stdout, stderr})
+    })
+}
+
+exports.checkRemote = (branch, dir, callback) => {
+    exec(`git show-branch remotes/origin/${branch}`, {
+        cwd: dir
+    }, (err, stdout, stderr) => {
+        let hasRmote
+        if (/fatal: bad sha1 reference/.test(stderr)) hasRmote = false
+        else hasRemote = true
+        if (callback)
+            callback({err, stdout, stderr}, hasRemote)
+    })
+}
+
+exports.mergeRemote = (branch, dir, callback) => {
+    exec(`git merge origin/${branch}`, {
+        cwd: dir
+    }, (err, stdout, stderr) => {
+        if (callback)
+            callback({err, stdout, stderr})
     })
 }
