@@ -6,6 +6,7 @@ const fs = require('fs')
 const exec = require('child_process').exec
 const os = require('os')
 const { addRepository, getRepositories, setSelectedProject, getSelectedProject, hashExists, getCurrentDirectory, deleteRepository } = require('./store')
+const { checkGitStatus, hashDirectory, getBranches, checkoutBranch, createBranch, addToIndex, commitChanges, pushCommits } = require('./git')
 
 const repoWindow = $('.repo-container')
 const branchWindow = $('.branch-container')
@@ -48,108 +49,6 @@ function formatDir(dir) {
     return /^~/.test(dir)
         ? os.homedir() + dir.substr(1).trim()
         : dir.trim()
-}
-
-//    ______ _____ _______
-//   |  ____   |      |
-//   |_____| __|__    |
-//
-
-function checkGitStatus(dir, callback) {
-    let status
-    exec("git status", {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        if (err) status = 'unknown'
-        else if (/nothing to commit/.test(stdout)) status = 'clean'
-        else status = 'dirty'
-        if (callback)
-            callback(status)
-    })
-}
-
-function hashDirectory(dir, callback) {
-    exec(`echo "${dir}" | git hash-object --stdin`, (err, stdout, stderr) => {
-        if (callback)
-            callback(stdout.trim())
-    })
-}
-
-function getBranches(dir, showAll, callback) {
-    if (dir) {
-        let all = showAll ? ' -a' : ''
-        exec(`git branch${all}`, {
-            cwd: dir
-        }, (err, stdout, stderr) => {
-            if (callback)
-                callback(stdout)
-        })
-    } else {
-        if (callback)
-            callback('')
-    }
-}
-
-function checkoutBranch(branch, dir, callback) {
-    exec(`git checkout ${branch}`, {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        if (/Please commit your changes or stash them before you switch branches/.test(stderr))
-            branchError.text('Changes not commited or stashed')
-        else
-            if (callback)
-                callback()
-    })
-}
-
-function createBranch(branch, dir, callback) {
-    if (/^[a-zA-Z0-9_-]*$/g.test(branch)) {
-        exec(`git checkout -b ${branch}`, {
-            cwd: dir
-        }, (err, stdout, stderr) => {
-            console.log(err, stdout, stderr)
-            if (/already exists/.test(stderr))
-                newBranchModal.find('.error-message').text('The branch already exists')
-            else if (/is not recognized as an internal or external command/.test(stderr) || /is not a valid branch name/.test(stderr))
-                newBranchModal.find('.error-message').text('Invalid branch name')
-            else {
-                newBranchModal.find('.error-message').text('')
-                if (callback)
-                    callback()
-            }
-        })
-    } else
-        newBranchModal.find('.error-message').text('Invalid branch name')
-}
-
-function addToIndex(dir, callback) {
-    exec('git add .', {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        console.log(err, stdout, stderr)
-        if (callback)
-            callback()
-    })
-}
-
-function commitChanges(dir, message, callback) {
-    exec(`git commit -m "${message}"`, {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        console.log(err, stdout, stderr)
-        if (callback)
-            callback([err, stdout, stderr])
-    })
-}
-
-function pushCommits(dir, callback) {
-    exec('git push origin', {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        console.log(err, stdout, stderr)
-        if (callback)
-            callback()
-    })
 }
 
 //          _____ _______ _______ _____ __   _  ______
@@ -330,7 +229,7 @@ newBranchModal.on('click', (e) => {
 newBranchModal.on('click', '#create-branch-button', () => {
     const branchName = newBranchModal.find('#new-branch-input').val()
     if (branchName != "")
-        createBranch(branchName, directory, () => {
+        createBranch(branchName, directory, newBranchModal, () => {
             listBranches()
             blackLayer.click()
         })
@@ -343,7 +242,7 @@ branchWindow.find('.close-icon').on('click', () => {
 
 branchList.on('click', '.branch-item', function() {
     let branch = $(this).data('branch')
-    checkoutBranch(branch, directory, () => {
+    checkoutBranch(branch, directory, branchError, () => {
         listBranches()
         getCurrentBranch(directory)
         branchWindow.fadeOut(300)
