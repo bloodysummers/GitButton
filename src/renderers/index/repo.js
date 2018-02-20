@@ -283,6 +283,12 @@ ipc.on('getCommitMessage', (e, message) => {
     })
 })
 
+ipc.on('focused', (e) => {
+    listRepositories()
+    checkGitStatus(directory, (status) => {
+        branchStatus = status
+    })
+})
 
 //    _____  __   _      _______ _______ _______  ______ _______
 //   |     | | \  |      |______    |    |_____| |_____/    |
