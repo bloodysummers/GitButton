@@ -135,7 +135,7 @@ exports.modifiedFiles = (dir, callback) => {
                 filesObj.push({
                     file: file.substr(2, file.length).trim(),
                     status,
-                    add: (status == 'M' || status == 'D' || status == 'A') ? true : false
+                    add: (status != '??' && status != '!!') ? true : false
                 })
             }
         })

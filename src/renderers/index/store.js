@@ -85,3 +85,7 @@ exports.getSelectedProject = () => {
 exports.setFilesStatus = (files) => {
     store.set('files', files)
 }
+
+exports.getFilesStatus = () => {
+    return store.get('files')
+}

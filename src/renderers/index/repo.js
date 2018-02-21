@@ -5,7 +5,7 @@ const { ipcRenderer: ipc } = electron
 const fs = require('fs')
 const exec = require('child_process').exec
 const os = require('os')
-const { addRepository, getRepositories, setSelectedProject, getSelectedProject, hashExists, getCurrentDirectory, deleteRepository, setFilesStatus } = require('./store')
+const { addRepository, getRepositories, setSelectedProject, getSelectedProject, hashExists, getCurrentDirectory, deleteRepository, setFilesStatus, getFilesStatus } = require('./store')
 const { checkGitStatus, hashDirectory, getBranches, checkoutBranch, createBranch, addToIndex, commitChanges, pushCommits, fetchOrigin, checkRemote, mergeRemote, modifiedFiles } = require('./git')
 
 const repoWindow = $('.repo-container')
@@ -23,6 +23,7 @@ const newBranchButton = $('#new-branch-button')
 const allBranchesButton = $('#checkbox-branches')
 const blackLayer = $('.black-layer')
 const newBranchModal = $('.new-branch-modal')
+const logContainer = $('.log-container')
 
 let directory
 let project
@@ -136,6 +137,27 @@ function getCurrentBranch(dir) {
             branchButton.find('.title').text('No branch selected')
             return "No branch selected"
         }
+    })
+}
+
+function listFiles() {
+    logContainer.html('')
+    let files = getFilesStatus()
+    files.map((file) => {
+        let icon = (file.status == '??' || file.status == '!!') ? 'untracked' :
+                    (file.status == 'M' || file.status == 'MM' || file.status == 'MD') ? 'modified' :
+                    (file.status == 'A' || file.status == 'AM' || file.status == 'AD') ? 'added' :
+                    (file.status == 'D' || file.status == 'DM') ? 'deleted' :
+                    (file.status == 'R' || file.status == 'RM' || file.status == 'RD') ? 'renamed' :
+                    (file.status == 'C' || file.status == 'CM' || file.status == 'CD') ? 'copied' :
+                    'stateless'
+        logContainer.append(`
+            <div class="file-item file-${icon}">
+                <input type="checkbox" data-file="${file.file}" ${file.add ? 'checked' : ''} />
+                ${file.file}
+                <i class="icon"></i>
+            </div>
+        `)
     })
 }
 
@@ -310,6 +332,7 @@ ipc.on('focused', (e) => {
     })
     modifiedFiles(directory, (files) => {
         setFilesStatus(files)
+        listFiles()
     })
 })
 
@@ -324,4 +347,5 @@ checkGitStatus(directory, (status) => {
 })
 modifiedFiles(directory, (files) => {
     setFilesStatus(files)
+    listFiles()
 })
