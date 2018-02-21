@@ -122,3 +122,29 @@ exports.mergeRemote = (branch, dir, callback) => {
             callback({err, stdout, stderr})
     })
 }
+
+exports.modifiedFiles = (dir, callback) => {
+    exec(`git status -u --porcelain`, {
+        cwd: dir
+    }, (err, stdout, stderr) => {
+        let files = stdout.split('\n')
+        let filesObj = []
+        files.map(function(file) {
+            let status = file.substr(0, 2).trim()
+            if (file.length) {
+                filesObj.push({
+                    file: file.substr(2, file.length).trim(),
+                    status,
+                    add: (status == 'M' || status == 'D' || status == 'A') ? true : false
+                })
+            }
+        })
+        filesObj.sort(function(a, b) {
+            var fileA = a.file.toUpperCase();
+            var fileB = b.file.toUpperCase();
+            return (fileA < fileB) ? -1 : (fileA > fileB) ? 1 : 0;
+        });
+        if (callback)
+            callback(filesObj)
+    })
+}

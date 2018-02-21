@@ -5,8 +5,8 @@ const { ipcRenderer: ipc } = electron
 const fs = require('fs')
 const exec = require('child_process').exec
 const os = require('os')
-const { addRepository, getRepositories, setSelectedProject, getSelectedProject, hashExists, getCurrentDirectory, deleteRepository } = require('./store')
-const { checkGitStatus, hashDirectory, getBranches, checkoutBranch, createBranch, addToIndex, commitChanges, pushCommits, fetchOrigin, checkRemote, mergeRemote } = require('./git')
+const { addRepository, getRepositories, setSelectedProject, getSelectedProject, hashExists, getCurrentDirectory, deleteRepository, setFilesStatus } = require('./store')
+const { checkGitStatus, hashDirectory, getBranches, checkoutBranch, createBranch, addToIndex, commitChanges, pushCommits, fetchOrigin, checkRemote, mergeRemote, modifiedFiles } = require('./git')
 
 const repoWindow = $('.repo-container')
 const branchWindow = $('.branch-container')
@@ -308,6 +308,9 @@ ipc.on('focused', (e) => {
     checkGitStatus(directory, (status) => {
         branchStatus = status
     })
+    modifiedFiles(directory, (files) => {
+        setFilesStatus(files)
+    })
 })
 
 //    _____  __   _      _______ _______ _______  ______ _______
@@ -318,4 +321,7 @@ ipc.on('focused', (e) => {
 listRepositories()
 checkGitStatus(directory, (status) => {
     branchStatus = status
+})
+modifiedFiles(directory, (files) => {
+    setFilesStatus(files)
 })
