@@ -11,6 +11,7 @@ let mainWindow
 
 let commitWindow
 
+// Functions
 function startCommitWindow() {
     commitWindow = new BrowserWindow({
         width: 400,
@@ -48,6 +49,7 @@ function hideCommit() {
     commitWindow.close()
 }
 
+// App launching
 app.disableHardwareAcceleration()
 
 app.on('ready', () => {
@@ -62,6 +64,9 @@ app.on('ready', () => {
     mainWindow.on('closed', () => {
         mainWindow = null
         app.quit()
+    })
+    mainWindow.on('focus', () => {
+        mainWindow.webContents.send('focused')
     })
 
     globalShortcut.register('CmdOrCtrl+Shift+Alt+C', () => {

@@ -5,7 +5,8 @@ const { ipcRenderer: ipc } = electron
 const fs = require('fs')
 const exec = require('child_process').exec
 const os = require('os')
-const { addRepository, getRepositories, setSelectedProject, getSelectedProject, hashExists, getCurrentDirectory, deleteRepository } = require('./store')
+const { addRepository, getRepositories, setSelectedProject, getSelectedProject, hashExists, getCurrentDirectory, deleteRepository, setFilesStatus, getFilesStatus } = require('./store')
+const { checkGitStatus, hashDirectory, getBranches, checkoutBranch, createBranch, addToIndex, commitChanges, pushCommits, fetchOrigin, checkRemote, mergeRemote, modifiedFiles } = require('./git')
 
 const repoWindow = $('.repo-container')
 const branchWindow = $('.branch-container')
@@ -19,21 +20,24 @@ const branchButton = $('#branch')
 const branchList = $('#branch-list')
 const branchError = $('#branch-error')
 const newBranchButton = $('#new-branch-button')
+const allBranchesButton = $('#checkbox-branches')
 const blackLayer = $('.black-layer')
 const newBranchModal = $('.new-branch-modal')
+const logContainer = $('.log-container')
 
 let directory
 let project
 let branch
+let branchStatus
+let showAllBranches = false
 let showRepoSettings = false
 let showBranchSettings = false
-let branchStatus
 
-inputFileButton.on('click', () => {
-    inputFile.click()
-})
+//   ______  _____  ______ _______ _______ _______  _____   ______ __   __
+//   |     \   |   |_____/ |______ |          |    |     | |_____/   \_/
+//   |_____/ __|__ |    \_ |______ |_____     |    |_____| |    \_    |
+//
 
-// Functions
 function isDir(dir) {
     try {
         return fs.lstatSync(dir).isDirectory()
@@ -48,67 +52,10 @@ function formatDir(dir) {
         : dir.trim()
 }
 
-function checkGitStatus(dir, callback) {
-    let status
-    exec("git status", {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        if (err) status = 'unknown'
-        else if (/nothing to commit/.test(stdout)) status = 'clean'
-        else status = 'dirty'
-        if (callback)
-            callback(status)
-    })
-}
-
-function getCurrentBranch(dir) {
-    exec("git branch", {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        let branches = stdout.split('\n')
-        if (branches.length > 1) {
-            let branch
-            for (let i = 0; i<branches.length; i++) {
-                if (branches[i].charAt(0) == '*') {
-                    branch = branches[i].substr(2, branches[i].length-1).trim()
-                    branchButton.find('.title').text(branch)
-                    return branch
-                }
-            }
-        } else {
-            branches = undefined
-            branchButton.find('.title').text('No branch selected')
-        }
-    })
-}
-
-function getBranches(dir, showAll, callback) {
-    let all = showAll ? ' -a' : ''
-    exec(`git branch${all}`, {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        let branches = stdout.split('\n')
-        let clrBranches = []
-        if (branches.length > 1) {
-            for (let i = 0; i<branches.length; i++) {
-                if (branches[i].charAt(0) == '*') {
-                    branch = branches[i].substr(2, branches[i].length-1).trim()
-                    clrBranches.push({branch, active: true})
-                } else {
-                    if (branches[i].length > 0)
-                        clrBranches.push({branch: branches[i].trim(), active: false})
-                }
-            }
-        }
-        clrBranches.sort(function(a, b) {
-            var branchA = a.branch.toUpperCase();
-            var branchB = b.branch.toUpperCase();
-            return (branchA < branchB) ? -1 : (branchA > branchB) ? 1 : 0;
-        });
-        if (callback)
-            callback(clrBranches)
-    })
-}
+//          _____ _______ _______ _____ __   _  ______
+//   |        |   |______    |      |   | \  | |  ____
+//   |_____ __|__ ______|    |    __|__ |  \_| |_____|
+//
 
 function listRepositories() {
     const repos = getRepositories()
@@ -128,9 +75,9 @@ function listRepositories() {
     directory = getCurrentDirectory(selected)
     project = getCurrentDirectory(selected, true)
     listBranches()
-    branch = getCurrentBranch(directory)
+    // branch = getCurrentBranch(directory)
     checkGitStatus(directory, (status) => {
-        branchStatus = status;
+        branchStatus = status
     })
     if (project)
         repositoryButton.find('.title').text(project)
@@ -138,119 +85,75 @@ function listRepositories() {
         repositoryButton.find('.title').text('No project selected')
 }
 
+// TODO: Sanitize data-branch
 function listBranches() {
     branchList.html('')
-    getBranches(directory, undefined, (branches) => {
-        for (let i = 0; i<branches.length; i++) {
-            let active = branches[i].active
+    getBranches(directory, showAllBranches, (stdout) => {
+        let branches = stdout.split('\n')
+        let clrBranches = []
+        if (branches.length > 1) {
+            for (let i = 0; i<branches.length; i++) {
+                if (branches[i].charAt(0) == '*') {
+                    branch = branches[i].substr(2, branches[i].length-1).trim()
+                    branchButton.find('.title').text(branch)
+                    clrBranches.push({branch, active: true})
+                } else {
+                    if (branches[i].length > 0)
+                        clrBranches.push({branch: branches[i].trim(), active: false})
+                }
+            }
+        }
+        clrBranches.sort(function(a, b) {
+            var branchA = a.branch.toUpperCase()
+            var branchB = b.branch.toUpperCase()
+            return (branchA < branchB) ? -1 : (branchA > branchB) ? 1 : 0
+        })
+        for (let i = 0; i<clrBranches.length; i++) {
+            let active = clrBranches[i].active
             branchError.text('')
             branchList.append(`
-                <div class="branch-item${active ? ' active' : ''}" data-branch=${branches[i].branch}>
-                    <h4 class="branch-name">${branches[i].branch}</h4>
+                <div class="branch-item${active ? ' active' : ''}" data-branch=${clrBranches[i].branch}>
+                    <h4 class="branch-name">${clrBranches[i].branch}</h4>
                 </div>`
             )
+        }
+        let activeBranch = clrBranches.filter(branch => {
+            return branch.active
+        })
+        if (!activeBranch.length) {
+            branchButton.find('.title').text('No branch selected')
+            branch = "No branch selected"
         }
     })
 }
 
-function checkoutBranch(branch, dir, callback) {
-    exec(`git checkout ${branch}`, {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        if (/Please commit your changes or stash them before you switch branches/.test(stderr))
-            branchError.text('Changes not commited or stashed')
-        else
-            if (callback)
-                callback()
+function listFiles() {
+    logContainer.html('')
+    let files = getFilesStatus()
+    files.map((file) => {
+        let icon = (file.status == '??' || file.status == '!!') ? 'untracked' :
+                    (file.status == 'M' || file.status == 'MM' || file.status == 'MD') ? 'modified' :
+                    (file.status == 'A' || file.status == 'AM' || file.status == 'AD') ? 'added' :
+                    (file.status == 'D' || file.status == 'DM') ? 'deleted' :
+                    (file.status == 'R' || file.status == 'RM' || file.status == 'RD') ? 'renamed' :
+                    (file.status == 'C' || file.status == 'CM' || file.status == 'CD') ? 'copied' :
+                    'stateless'
+        logContainer.append(`
+            <div class="file-item file-${icon}">
+                <input type="checkbox" data-file="${file.file}" ${file.add ? 'checked' : ''} />
+                ${file.file}
+                <i class="icon"></i>
+            </div>
+        `)
     })
 }
 
-function createBranch(branch, dir, callback) {
-    if (/^[a-zA-Z0-9_-]*$/g.test(branch)) {
-        exec(`git checkout -b ${branch}`, {
-            cwd: dir
-        }, (err, stdout, stderr) => {
-            console.log(err, stdout, stderr)
-            if (/already exists/.test(stderr))
-                newBranchModal.find('.error-message').text('The branch already exists')
-            else if (/is not recognized as an internal or external command/.test(stderr) || /is not a valid branch name/.test(stderr))
-                newBranchModal.find('.error-message').text('Invalid branch name')
-            else {
-                newBranchModal.find('.error-message').text('')
-                if (callback)
-                    callback()
-            }
-        })
-    } else
-        newBranchModal.find('.error-message').text('Invalid branch name')
-}
+//   _______ _    _ _______ __   _ _______ _______
+//   |______  \  /  |______ | \  |    |    |______
+//   |______   \/   |______ |  \_|    |    ______|
+//
 
-function addToIndex(dir, callback) {
-    exec('git add .', {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        console.log(err, stdout, stderr)
-        if (callback)
-            callback()
-    })
-}
-
-function commitChanges(dir, message, callback) {
-    exec(`git commit -m "${message}"`, {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        console.log(err, stdout, stderr)
-        if (callback)
-            callback([err, stdout, stderr])
-    })
-}
-
-function pushCommits(dir, callback) {
-    exec('git push origin', {
-        cwd: dir
-    }, (err, stdout, stderr) => {
-        console.log(err, stdout, stderr)
-        if (callback)
-            callback()
-    })
-}
-
-
-// Events
-inputFile.on('change', () => {
-    if (inputFile[0].files[0]) {
-        const dir = formatDir(inputFile[0].files[0].path)
-        if (isDir(dir))
-            checkGitStatus(dir, (status) => {
-                if (status != 'unknown') {
-                    exec(`echo "${dir}" | git hash-object --stdin`, (err, hash) => {
-                        if (!hashExists(hash.trim())) {
-                            repoError.text('')
-                            addRepository(dir, hash.trim())
-                            listRepositories()
-                        } else {
-                            repoError.text('Already stored')
-                        }
-                    })
-                } else {
-                    repoError.text('Not a git repository')
-                }
-            })
-    }
-})
-repoList.on('click', '.repo-item', function() {
-    let hash = $(this).data('hash')
-    setSelectedProject(hash)
-    listRepositories()
-    repoWindow.fadeOut(300)
-    showRepoSettings = false
-})
-repoList.on('click', '.delete-project', function(e) {
-    e.stopPropagation()
-    let hash = $(this).parent().data('hash')
-    deleteRepository(hash)
-    listRepositories()
-})
+// Repo window
 repositoryButton.on('click', (e) => {
     if (showRepoSettings) {
         repoWindow.fadeOut(300)
@@ -262,15 +165,55 @@ repositoryButton.on('click', (e) => {
         showBranchSettings = false
     }
 })
-branchList.on('click', '.branch-item', function() {
-    let branch = $(this).data('branch')
-    checkoutBranch(branch, directory, () => {
-        listBranches()
-        getCurrentBranch(directory)
-        branchWindow.fadeOut(300)
-        showBranchSettings = false
-    })
+
+inputFileButton.on('click', () => {
+    inputFile.click()
 })
+
+inputFile.on('change', () => {
+    if (inputFile[0].files[0]) {
+        const dir = formatDir(inputFile[0].files[0].path)
+        if (isDir(dir)) {
+            checkGitStatus(dir, (status) => {
+                if (status != 'unknown') {
+                    hashDirectory(dir, (hash) => {
+                        if (!hashExists(hash)) {
+                            repoError.text('')
+                            addRepository(dir, hash)
+                            listRepositories()
+                        } else {
+                            repoError.text('Already stored')
+                        }
+                    })
+                } else {
+                    repoError.text('Not a git repository')
+                }
+            })
+        }
+    }
+})
+
+repoWindow.find('.close-icon').on('click', () => {
+    repoWindow.fadeOut(300)
+    showRepoSettings = false
+})
+
+repoList.on('click', '.repo-item', function() {
+    let hash = $(this).data('hash')
+    setSelectedProject(hash)
+    listRepositories()
+    repoWindow.fadeOut(300)
+    showRepoSettings = false
+})
+
+repoList.on('click', '.delete-project', function(e) {
+    e.stopPropagation()
+    let hash = $(this).parent().data('hash')
+    deleteRepository(hash)
+    listRepositories()
+})
+
+// Branch window
 branchButton.on('click', (e) => {
     if (showBranchSettings) {
         branchWindow.fadeOut(300)
@@ -282,53 +225,108 @@ branchButton.on('click', (e) => {
         showRepoSettings = false
     }
 })
+
 newBranchButton.on('click', () => {
     $('.new-branch-modal').show()
     $('.black-layer').fadeIn(300)
 })
-blackLayer.on('click', () => {
-    blackLayer.fadeOut(300).find('modal').fadeOut(300)
-    newBranchModal.find('.error-message').text('')
-})
+
 newBranchModal.on('click', (e) => {
     e.stopPropagation()
 })
+
 newBranchModal.on('click', '#create-branch-button', () => {
     const branchName = newBranchModal.find('#new-branch-input').val()
     if (branchName != "")
-        createBranch(branchName, directory, () => {
+        createBranch(branchName, directory, newBranchModal, () => {
             listBranches()
             blackLayer.click()
         })
 })
-repoWindow.find('.close-icon').on('click', () => {
-    repoWindow.fadeOut(300)
-    showRepoSettings = false
-})
+
 branchWindow.find('.close-icon').on('click', () => {
     branchWindow.fadeOut(300)
     showBranchSettings = false
 })
 
-// Communication
-ipc.on('getCommitMessage', (e, message) => {
-    checkGitStatus(directory, (status) => {
-        branchStatus = status;
-        if (branchStatus == 'dirty') {
-            console.log('dirty branch')
-            addToIndex(directory, () => {
-                commitChanges(directory, message, (result) => {
-                    console.log(result)
-                    pushCommits(directory)
-                })
-            })
-        } else {
-            console.log('The branch is clean')
-        }
+branchList.on('click', '.branch-item', function() {
+    let branch = $(this).data('branch')
+    checkoutBranch(branch, directory, branchError, () => {
+        listBranches()
+        // getCurrentBranch(directory)
+        branchWindow.fadeOut(300)
+        showBranchSettings = false
     })
 })
 
+allBranchesButton.on('change', function() {
+    let checked = allBranchesButton[0].checked
+    showAllBranches = checked
+    listBranches()
+})
+
+// Black layer
+blackLayer.on('click', () => {
+    blackLayer.fadeOut(300).find('modal').fadeOut(300)
+    newBranchModal.find('.error-message').text('')
+})
+
+//   _______  _____  _______ _______ _     _ __   _ _____ _______ _______ _______ _____  _____  __   _
+//   |       |     | |  |  | |  |  | |     | | \  |   |   |       |_____|    |      |   |     | | \  |
+//   |_____  |_____| |  |  | |  |  | |_____| |  \_| __|__ |_____  |     |    |    __|__ |_____| |  \_|
+//
+
+ipc.on('getCommitMessage', (e, message) => {
+    // Pull all the remote changes
+    fetchOrigin(branch, directory, msg => {
+        console.log(msg)
+        // Merge changes from remote
+        mergeRemote(branch, directory, (msg) => {
+            console.log(msg)
+            // If merge has no conflicts...
+            // Check if you have changes to upload
+            checkGitStatus(directory, (status) => {
+                branchStatus = status
+                if (branchStatus == 'dirty') {
+                    // Check if local is ancestor
+                    //if ancestor, fast-forward
+                    // else merge
+                    // If no conflict, continue
+                    // Add all files to index
+                    addToIndex(directory, () => {
+                        commitChanges(directory, message, (result) => {
+                            console.log(result)
+                            checkRemote(branch, directory, (msg, remote) => {
+                                console.log(msg, remote)
+                                pushCommits(remote ? branch : '', directory, (msg) => {
+                                    console.log(msg)
+                                })
+                            })
+                        })
+                    })
+                } else {
+                    console.log('The branch is clean')
+                }
+            })
+        })
+    })
+})
+
+ipc.on('focused', (e) => {
+    listRepositories()
+    modifiedFiles(directory, (files) => {
+        setFilesStatus(files)
+        listFiles()
+    })
+})
+
+//    _____  __   _      _______ _______ _______  ______ _______
+//   |     | | \  |      |______    |    |_____| |_____/    |
+//   |_____| |  \_|      ______|    |    |     | |    \_    |
+//
+
 listRepositories()
-checkGitStatus(directory, (status) => {
-    branchStatus = status
+modifiedFiles(directory, (files) => {
+    setFilesStatus(files)
+    listFiles()
 })
