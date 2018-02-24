@@ -75,9 +75,9 @@ function listRepositories() {
     directory = getCurrentDirectory(selected)
     project = getCurrentDirectory(selected, true)
     listBranches()
-    branch = getCurrentBranch(directory)
+    // branch = getCurrentBranch(directory)
     checkGitStatus(directory, (status) => {
-        branchStatus = status;
+        branchStatus = status
     })
     if (project)
         repositoryButton.find('.title').text(project)
@@ -88,7 +88,6 @@ function listRepositories() {
 // TODO: Sanitize data-branch
 function listBranches() {
     branchList.html('')
-    let isthereall = showAllBranches
     getBranches(directory, showAllBranches, (stdout) => {
         let branches = stdout.split('\n')
         let clrBranches = []
@@ -96,6 +95,7 @@ function listBranches() {
             for (let i = 0; i<branches.length; i++) {
                 if (branches[i].charAt(0) == '*') {
                     branch = branches[i].substr(2, branches[i].length-1).trim()
+                    branchButton.find('.title').text(branch)
                     clrBranches.push({branch, active: true})
                 } else {
                     if (branches[i].length > 0)
@@ -104,10 +104,10 @@ function listBranches() {
             }
         }
         clrBranches.sort(function(a, b) {
-            var branchA = a.branch.toUpperCase();
-            var branchB = b.branch.toUpperCase();
-            return (branchA < branchB) ? -1 : (branchA > branchB) ? 1 : 0;
-        });
+            var branchA = a.branch.toUpperCase()
+            var branchB = b.branch.toUpperCase()
+            return (branchA < branchB) ? -1 : (branchA > branchB) ? 1 : 0
+        })
         for (let i = 0; i<clrBranches.length; i++) {
             let active = clrBranches[i].active
             branchError.text('')
@@ -117,25 +117,12 @@ function listBranches() {
                 </div>`
             )
         }
-    })
-}
-
-function getCurrentBranch(dir) {
-    getBranches(dir, false, (stdout) => {
-        let branches = stdout.split('\n')
-        if (branches.length > 1) {
-            let branch
-            for (let i = 0; i<branches.length; i++) {
-                if (branches[i].charAt(0) == '*') {
-                    branch = branches[i].substr(2, branches[i].length-1).trim()
-                    branchButton.find('.title').text(branch)
-                    return branch
-                }
-            }
-        } else {
-            branches = undefined
+        let activeBranch = clrBranches.filter(branch => {
+            return branch.active
+        })
+        if (!activeBranch.length) {
             branchButton.find('.title').text('No branch selected')
-            return "No branch selected"
+            branch = "No branch selected"
         }
     })
 }
@@ -266,7 +253,7 @@ branchList.on('click', '.branch-item', function() {
     let branch = $(this).data('branch')
     checkoutBranch(branch, directory, branchError, () => {
         listBranches()
-        getCurrentBranch(directory)
+        // getCurrentBranch(directory)
         branchWindow.fadeOut(300)
         showBranchSettings = false
     })
@@ -299,7 +286,7 @@ ipc.on('getCommitMessage', (e, message) => {
             // If merge has no conflicts...
             // Check if you have changes to upload
             checkGitStatus(directory, (status) => {
-                branchStatus = status;
+                branchStatus = status
                 if (branchStatus == 'dirty') {
                     // Check if local is ancestor
                     //if ancestor, fast-forward
@@ -327,9 +314,6 @@ ipc.on('getCommitMessage', (e, message) => {
 
 ipc.on('focused', (e) => {
     listRepositories()
-    checkGitStatus(directory, (status) => {
-        branchStatus = status
-    })
     modifiedFiles(directory, (files) => {
         setFilesStatus(files)
         listFiles()
@@ -342,9 +326,6 @@ ipc.on('focused', (e) => {
 //
 
 listRepositories()
-checkGitStatus(directory, (status) => {
-    branchStatus = status
-})
 modifiedFiles(directory, (files) => {
     setFilesStatus(files)
     listFiles()

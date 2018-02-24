@@ -47,7 +47,7 @@ exports.checkoutBranch = (branch, dir, branchError, callback) => {
     })
 }
 
-function createBranch(branch, dir, modal, callback) {
+exports.createBranch = (branch, dir, modal, callback) => {
     if (/^[a-zA-Z0-9_-]*$/g.test(branch)) {
         exec(`git checkout -b ${branch}`, {
             cwd: dir
@@ -106,7 +106,7 @@ exports.checkRemote = (branch, dir, callback) => {
     exec(`git show-branch remotes/origin/${branch}`, {
         cwd: dir
     }, (err, stdout, stderr) => {
-        let hasRmote
+        let hasRemote
         if (/fatal: bad sha1 reference/.test(stderr)) hasRmote = false
         else hasRemote = true
         if (callback)
@@ -135,15 +135,15 @@ exports.modifiedFiles = (dir, callback) => {
                 filesObj.push({
                     file: file.substr(2, file.length).trim(),
                     status,
-                    add: (status != '??' && status != '!!') ? true : false
+                    add: true
                 })
             }
         })
         filesObj.sort(function(a, b) {
-            var fileA = a.file.toUpperCase();
-            var fileB = b.file.toUpperCase();
-            return (fileA < fileB) ? -1 : (fileA > fileB) ? 1 : 0;
-        });
+            var fileA = a.file.toUpperCase()
+            var fileB = b.file.toUpperCase()
+            return (fileA < fileB) ? -1 : (fileA > fileB) ? 1 : 0
+        })
         if (callback)
             callback(filesObj)
     })

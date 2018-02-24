@@ -35,10 +35,10 @@ exports.addRepository = (dir, hash) => {
         location, name, hash, dir
     })
     repositories.sort(function(a, b) {
-        var projectA = a.name.toUpperCase();
-        var projectB = b.name.toUpperCase();
-        return (projectA < projectB) ? -1 : (projectA > projectB) ? 1 : 0;
-    });
+        var projectA = a.name.toUpperCase()
+        var projectB = b.name.toUpperCase()
+        return (projectA < projectB) ? -1 : (projectA > projectB) ? 1 : 0
+    })
     store.set('repositories', repositories)
     store.set('project', hash)
 }
