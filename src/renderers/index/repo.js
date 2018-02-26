@@ -151,10 +151,26 @@ function listFiles() {
                     (file.status == 'R' || file.status == 'RM' || file.status == 'RD') ? 'renamed' :
                     (file.status == 'C' || file.status == 'CM' || file.status == 'CD') ? 'copied' :
                     'stateless'
+        let fileName = []
+        if (file.file.indexOf('/') > -1  || file.file.indexOf('\\') > -1) {
+            if (file.file.lastIndexOf('/') > -1) {
+                fileName.push(file.file.substr(0, file.file.lastIndexOf('/')))
+                fileName.push(file.file.substr(file.file.lastIndexOf('/'), file.file.length))
+            } else if (file.file.lastIndexOf('\\') > -1) {
+                fileName.push(file.file.substr(0, file.file.lastIndexOf('\\')))
+                fileName.push(file.file.substr(file.file.lastIndexOf('\\'), file.file.length))
+            }
+        } else {
+            fileName.push(file.file)
+        }
         logContainer.append(`
             <div class="file-item file-${icon}">
                 <input type="checkbox" data-file="${file.file}" ${file.add ? 'checked' : ''} />
-                ${file.file}
+                <div class="file-name" title="${file.file}">
+                    <div class="name-flex">
+                        <span class="part-1">${fileName[0]}</span>${fileName.length > 1 ? `<span class="part-2">${fileName[1]}</span>` : ''}
+                    </div>
+                </div>
                 <i class="icon"></i>
             </div>
         `)
