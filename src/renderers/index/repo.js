@@ -25,13 +25,14 @@ const blackLayer = $('.black-layer')
 const newBranchModal = $('.new-branch-modal')
 const logContainer = $('.log-container')
 
-let directory
-let project
-let branch
-let branchStatus
-let showAllBranches = false
-let showRepoSettings = false
-let showBranchSettings = false
+let DIRECTORY
+let PROJECT
+let PROJECT_HASH
+let BRANCH
+let BRANCH_STATUS
+let SHOW_ALL_BRANCHES = false
+let SHOW_REPO_SETTINGS = false
+let SHOW_BRANCH_SETTINS = false
 
 //   ______  _____  ______ _______ _______ _______  _____   ______ __   __
 //   |     \   |   |_____/ |______ |          |    |     | |_____/   \_/
@@ -57,13 +58,38 @@ function formatDir(dir) {
 //   |_____ __|__ ______|    |    __|__ |  \_| |_____|
 //
 
+function main() {
+    PROJECT_HASH = getSelectedProject()
+    DIRECTORY = getCurrentDirectory(PROJECT_HASH)
+    PROJECT = getCurrentDirectory(PROJECT_HASH, true)
+    listRepositories()
+    listBranches()
+    checkGitStatus(DIRECTORY, (status) => {
+        BRANCH_STATUS = status
+    })
+    modifiedFiles(DIRECTORY, (files) => {
+        let oldFiles = getFilesStatus()
+        let checkedFiles = files.map(file => {
+            let checkOldFiles = oldFiles.filter(f => {
+                return f.file == file.file
+            })
+            if (checkOldFiles.length)
+                return checkOldFiles[0]
+            else
+                return file
+        })
+        setFilesStatus(checkedFiles)
+        listFiles()
+    })
+}
+
+// Just list the repos
 function listRepositories() {
-    const repos = getRepositories()
-    let selected = getSelectedProject()
     repoList.html('')
+    const repos = getRepositories()
     for (let i = 0; i < repos.length; i++) {
         let hash = repos[i].hash
-        let active = hash == selected
+        let active = hash == PROJECT_HASH
         repoList.append(`
             <div class="repo-item${active ? ' active' : ''}" data-hash=${repos[i].hash}>
                 <div class="delete-project"><i class="fa fa-trash"></i></div>
@@ -72,31 +98,24 @@ function listRepositories() {
             </div>`
         )
     }
-    directory = getCurrentDirectory(selected)
-    project = getCurrentDirectory(selected, true)
-    listBranches()
-    // branch = getCurrentBranch(directory)
-    checkGitStatus(directory, (status) => {
-        branchStatus = status
-    })
-    if (project)
-        repositoryButton.find('.title').text(project)
+    if (PROJECT)
+        repositoryButton.find('.title').text(PROJECT)
     else
         repositoryButton.find('.title').text('No project selected')
 }
 
-// TODO: Sanitize data-branch
+// Just list the branches
 function listBranches() {
     branchList.html('')
-    getBranches(directory, showAllBranches, (stdout) => {
+    getBranches(DIRECTORY, SHOW_ALL_BRANCHES, (stdout) => {
         let branches = stdout.split('\n')
         let clrBranches = []
         if (branches.length > 1) {
             for (let i = 0; i<branches.length; i++) {
                 if (branches[i].charAt(0) == '*') {
-                    branch = branches[i].substr(2, branches[i].length-1).trim()
-                    branchButton.find('.title').text(branch)
-                    clrBranches.push({branch, active: true})
+                    BRANCH = branches[i].substr(2, branches[i].length-1).trim()
+                    branchButton.find('.title').text(BRANCH)
+                    clrBranches.push({branch: BRANCH, active: true})
                 } else {
                     if (branches[i].length > 0)
                         clrBranches.push({branch: branches[i].trim(), active: false})
@@ -112,7 +131,7 @@ function listBranches() {
             let active = clrBranches[i].active
             branchError.text('')
             branchList.append(`
-                <div class="branch-item${active ? ' active' : ''}" data-branch=${clrBranches[i].branch}>
+                <div class="branch-item${active ? ' active' : ''}" data-branch=${encodeURI(clrBranches[i].branch)}>
                     <h4 class="branch-name">${clrBranches[i].branch}</h4>
                 </div>`
             )
@@ -122,11 +141,12 @@ function listBranches() {
         })
         if (!activeBranch.length) {
             branchButton.find('.title').text('No branch selected')
-            branch = "No branch selected"
+            BRANCH = "No branch selected"
         }
     })
 }
 
+// Just list the files
 function listFiles() {
     logContainer.html('')
     let files = getFilesStatus()
@@ -171,14 +191,14 @@ function listFiles() {
 
 // Repo window
 repositoryButton.on('click', (e) => {
-    if (showRepoSettings) {
+    if (SHOW_REPO_SETTINGS) {
         repoWindow.fadeOut(300)
-        showRepoSettings = false
+        SHOW_REPO_SETTINGS = false
     } else {
         repoWindow.fadeIn(300)
-        showRepoSettings = true
+        SHOW_REPO_SETTINGS = true
         branchWindow.fadeOut(300)
-        showBranchSettings = false
+        SHOW_BRANCH_SETTINS = false
     }
 })
 
@@ -211,7 +231,7 @@ inputFile.on('change', () => {
 
 repoWindow.find('.close-icon').on('click', () => {
     repoWindow.fadeOut(300)
-    showRepoSettings = false
+    SHOW_REPO_SETTINGS = false
 })
 
 repoList.on('click', '.repo-item', function() {
@@ -219,7 +239,7 @@ repoList.on('click', '.repo-item', function() {
     setSelectedProject(hash)
     listRepositories()
     repoWindow.fadeOut(300)
-    showRepoSettings = false
+    SHOW_REPO_SETTINGS = false
 })
 
 repoList.on('click', '.delete-project', function(e) {
@@ -231,14 +251,14 @@ repoList.on('click', '.delete-project', function(e) {
 
 // Branch window
 branchButton.on('click', (e) => {
-    if (showBranchSettings) {
+    if (SHOW_BRANCH_SETTINS) {
         branchWindow.fadeOut(300)
-        showBranchSettings = false
+        SHOW_BRANCH_SETTINS = false
     } else {
         branchWindow.fadeIn(300)
-        showBranchSettings = true
+        SHOW_BRANCH_SETTINS = true
         repoWindow.fadeOut(300)
-        showRepoSettings = false
+        SHOW_REPO_SETTINGS = false
     }
 })
 
@@ -254,7 +274,7 @@ newBranchModal.on('click', (e) => {
 newBranchModal.on('click', '#create-branch-button', () => {
     const branchName = newBranchModal.find('#new-branch-input').val()
     if (branchName != "")
-        createBranch(branchName, directory, newBranchModal, () => {
+        createBranch(branchName, DIRECTORY, newBranchModal, () => {
             listBranches()
             blackLayer.click()
         })
@@ -262,22 +282,21 @@ newBranchModal.on('click', '#create-branch-button', () => {
 
 branchWindow.find('.close-icon').on('click', () => {
     branchWindow.fadeOut(300)
-    showBranchSettings = false
+    SHOW_BRANCH_SETTINS = false
 })
 
 branchList.on('click', '.branch-item', function() {
     let branch = $(this).data('branch')
-    checkoutBranch(branch, directory, branchError, () => {
+    checkoutBranch(branch, DIRECTORY, branchError, () => {
         listBranches()
-        // getCurrentBranch(directory)
         branchWindow.fadeOut(300)
-        showBranchSettings = false
+        SHOW_BRANCH_SETTINS = false
     })
 })
 
 allBranchesButton.on('change', function() {
     let checked = allBranchesButton[0].checked
-    showAllBranches = checked
+    SHOW_ALL_BRANCHES = checked
     listBranches()
 })
 
@@ -287,6 +306,26 @@ blackLayer.on('click', () => {
     newBranchModal.find('.error-message').text('')
 })
 
+// Files
+logContainer.on('click', '.file-item input', function() {
+    const val = $(this).is(':checked')
+    const fileName = $(this).data('file')
+    let files = getFilesStatus()
+    let newFiles = files.map(file => {
+        if (file.file == fileName) {
+            return {
+                file: fileName,
+                status: file.status,
+                add: val
+            }
+        } else {
+            return file
+        }
+    })
+    setFilesStatus(newFiles)
+    listFiles()
+})
+
 //   _______  _____  _______ _______ _     _ __   _ _____ _______ _______ _______ _____  _____  __   _
 //   |       |     | |  |  | |  |  | |     | | \  |   |   |       |_____|    |      |   |     | | \  |
 //   |_____  |_____| |  |  | |  |  | |_____| |  \_| __|__ |_____  |     |    |    __|__ |_____| |  \_|
@@ -294,27 +333,27 @@ blackLayer.on('click', () => {
 
 ipc.on('getCommitMessage', (e, message) => {
     // Pull all the remote changes
-    fetchOrigin(branch, directory, msg => {
+    fetchOrigin(BRANCH, DIRECTORY, msg => {
         console.log(msg)
         // Merge changes from remote
-        mergeRemote(branch, directory, (msg) => {
+        mergeRemote(BRANCH, DIRECTORY, (msg) => {
             console.log(msg)
             // If merge has no conflicts...
             // Check if you have changes to upload
-            checkGitStatus(directory, (status) => {
-                branchStatus = status
-                if (branchStatus == 'dirty') {
+            checkGitStatus(DIRECTORY, (status) => {
+                BRANCH_STATUS = status
+                if (BRANCH_STATUS == 'dirty') {
                     // Check if local is ancestor
                     //if ancestor, fast-forward
                     // else merge
                     // If no conflict, continue
                     // Add all files to index
-                    addToIndex(directory, () => {
-                        commitChanges(directory, message, (result) => {
+                    addToIndex(DIRECTORY, () => {
+                        commitChanges(DIRECTORY, message, (result) => {
                             console.log(result)
-                            checkRemote(branch, directory, (msg, remote) => {
+                            checkRemote(BRANCH, DIRECTORY, (msg, remote) => {
                                 console.log(msg, remote)
-                                pushCommits(remote ? branch : '', directory, (msg) => {
+                                pushCommits(remote ? BRANCH : '', DIRECTORY, (msg) => {
                                     console.log(msg)
                                 })
                             })
@@ -328,12 +367,9 @@ ipc.on('getCommitMessage', (e, message) => {
     })
 })
 
+
 ipc.on('focused', (e) => {
-    listRepositories()
-    modifiedFiles(directory, (files) => {
-        setFilesStatus(files)
-        listFiles()
-    })
+    main()
 })
 
 //    _____  __   _      _______ _______ _______  ______ _______
@@ -341,8 +377,4 @@ ipc.on('focused', (e) => {
 //   |_____| |  \_|      ______|    |    |     | |    \_    |
 //
 
-listRepositories()
-modifiedFiles(directory, (files) => {
-    setFilesStatus(files)
-    listFiles()
-})
+main()
