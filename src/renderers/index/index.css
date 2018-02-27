@@ -173,6 +173,22 @@ input:checked:after {
 .log-container .file-copied .icon {
     background:#009EEB;
 }
+.log-container .file-item .file-name {
+    display:inline-block;
+    margin-left:5px;
+}
+.log-container .file-item .name-flex {
+    display:flex;
+    max-width:170px;
+}
+.log-container .file-item .part-1 {
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+.log-container .file-item .part-2 {
+    white-space:nowrap;
+}
 /* /Log */
 
 /* Lists */
