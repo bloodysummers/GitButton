@@ -237,7 +237,7 @@ repoWindow.find('.close-icon').on('click', () => {
 repoList.on('click', '.repo-item', function() {
     let hash = $(this).data('hash')
     setSelectedProject(hash)
-    listRepositories()
+    main()
     repoWindow.fadeOut(300)
     SHOW_REPO_SETTINGS = false
 })
